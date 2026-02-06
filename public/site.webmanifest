@@ -1,0 +1,16 @@
+{
+  "name": "ZenFlow",
+  "short_name": "ZenFlow",
+  "description": "Focus deeply. Work calmly. Digital detox and focus tracker.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6FFF9",
+  "theme_color": "#10B981",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

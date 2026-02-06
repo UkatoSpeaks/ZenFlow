@@ -1,26 +1,668 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
+/* ===========================
+   🌿 ZENFLOW DESIGN SYSTEM
+   Calm, minimal, wellness-first
+   =========================== */
+
+/* ---------- THEME INLINE ---------- */
 @theme inline {
+  /* Font families */
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Core color mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  
+  /* ZenFlow brand colors */
+  --color-zen-primary: var(--zen-primary);
+  --color-zen-primary-dark: var(--zen-primary-dark);
+  --color-zen-primary-light: var(--zen-primary-light);
+  --color-zen-primary-pale: var(--zen-primary-pale);
+  
+  /* Semantic colors */
+  --color-zen-success: var(--zen-success);
+  --color-zen-warning: var(--zen-warning);
+  --color-zen-error: var(--zen-error);
+  --color-zen-info: var(--zen-info);
+
+  /* shadcn mappings */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-4xl: 40px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------- LIGHT MODE (Default) ---------- */
+:root {
+  /* ZenFlow Brand Colors */
+  --zen-primary: #10B981;
+  --zen-primary-dark: #059669;
+  --zen-primary-light: #34D399;
+  --zen-primary-pale: #D1FAE5;
+  
+  /* Backgrounds */
+  --zen-bg: #F6FFF9;
+  --zen-bg-card: #FFFFFF;
+  --zen-bg-muted: #F0FDF4;
+  --zen-bg-elevated: #FFFFFF;
+  
+  /* Borders */
+  --zen-border: #E5E7EB;
+  --zen-border-light: #F3F4F6;
+  --zen-border-focus: #10B981;
+  
+  /* Text */
+  --zen-text: #0F172A;
+  --zen-text-secondary: #475569;
+  --zen-text-muted: #94A3B8;
+  --zen-text-inverse: #FFFFFF;
+  
+  /* Semantic */
+  --zen-success: #10B981;
+  --zen-warning: #F59E0B;
+  --zen-error: #EF4444;
+  --zen-info: #3B82F6;
+  
+  /* Shadows - Soft & Subtle */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.15);
+  --shadow-card: 0 4px 20px -2px rgba(16, 185, 129, 0.08);
+  
+  /* Radius */
+  --radius: 16px;
+  
+  /* Animation */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+  
+  /* shadcn tokens mapped to ZenFlow */
+  --background: #F6FFF9;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #10B981;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0FDF4;
+  --secondary-foreground: #0F172A;
+  --muted: #F0FDF4;
+  --muted-foreground: #64748B;
+  --accent: #D1FAE5;
+  --accent-foreground: #065F46;
+  --destructive: #EF4444;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #10B981;
+  
+  /* Chart colors - ZenFlow themed */
+  --chart-1: #10B981;
+  --chart-2: #34D399;
+  --chart-3: #6EE7B7;
+  --chart-4: #A7F3D0;
+  --chart-5: #D1FAE5;
+  
+  /* Sidebar */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #10B981;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0FDF4;
+  --sidebar-accent-foreground: #0F172A;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #10B981;
+}
+
+/* ---------- DARK MODE ---------- */
+.dark {
+  /* ZenFlow Brand Colors - Adjusted for dark */
+  --zen-primary: #34D399;
+  --zen-primary-dark: #10B981;
+  --zen-primary-light: #6EE7B7;
+  --zen-primary-pale: #064E3B;
+  
+  /* Backgrounds - Dark green tinted */
+  --zen-bg: #0A0F0D;
+  --zen-bg-card: #111916;
+  --zen-bg-muted: #1A2420;
+  --zen-bg-elevated: #1F2D27;
+  
+  /* Borders */
+  --zen-border: #2D3B35;
+  --zen-border-light: #243029;
+  --zen-border-focus: #34D399;
+  
+  /* Text */
+  --zen-text: #F0FDF4;
+  --zen-text-secondary: #A7F3D0;
+  --zen-text-muted: #6EE7B7;
+  --zen-text-inverse: #0F172A;
+  
+  /* Shadows - Subtle glow */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 30px rgba(52, 211, 153, 0.2);
+  --shadow-card: 0 4px 20px -2px rgba(52, 211, 153, 0.1);
+  
+  /* shadcn tokens - Dark mode */
+  --background: #0A0F0D;
+  --foreground: #F0FDF4;
+  --card: #111916;
+  --card-foreground: #F0FDF4;
+  --popover: #111916;
+  --popover-foreground: #F0FDF4;
+  --primary: #34D399;
+  --primary-foreground: #0F172A;
+  --secondary: #1A2420;
+  --secondary-foreground: #F0FDF4;
+  --muted: #1A2420;
+  --muted-foreground: #6EE7B7;
+  --accent: #064E3B;
+  --accent-foreground: #A7F3D0;
+  --destructive: #F87171;
+  --border: #2D3B35;
+  --input: #2D3B35;
+  --ring: #34D399;
+  
+  /* Chart colors - Dark mode */
+  --chart-1: #34D399;
+  --chart-2: #6EE7B7;
+  --chart-3: #A7F3D0;
+  --chart-4: #10B981;
+  --chart-5: #059669;
+  
+  /* Sidebar - Dark */
+  --sidebar: #111916;
+  --sidebar-foreground: #F0FDF4;
+  --sidebar-primary: #34D399;
+  --sidebar-primary-foreground: #0F172A;
+  --sidebar-accent: #1A2420;
+  --sidebar-accent-foreground: #F0FDF4;
+  --sidebar-border: #2D3B35;
+  --sidebar-ring: #34D399;
+}
+
+/* ---------- BASE LAYER ---------- */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    line-height: 1.6;
+  }
+
+  /* Reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Custom scrollbar - Subtle */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--zen-border);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--zen-text-muted);
+  }
+
+  /* Selection */
+  ::selection {
+    background: var(--zen-primary-pale);
+    color: var(--zen-text);
+  }
+
+  .dark ::selection {
+    background: var(--zen-primary-dark);
+    color: var(--zen-text);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------- TYPOGRAPHY UTILITIES ---------- */
+@layer utilities {
+  .zen-h1 {
+    @apply text-5xl font-bold tracking-tight;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .zen-h2 {
+    @apply text-4xl font-semibold tracking-tight;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .zen-h3 {
+    @apply text-2xl font-semibold;
+    line-height: 1.3;
+  }
+
+  .zen-h4 {
+    @apply text-xl font-medium;
+    line-height: 1.4;
+  }
+
+  .zen-body-lg {
+    @apply text-lg;
+    line-height: 1.7;
+  }
+
+  .zen-body {
+    @apply text-base;
+    line-height: 1.6;
+  }
+
+  .zen-small {
+    @apply text-sm;
+    line-height: 1.5;
+  }
+
+  .zen-tiny {
+    @apply text-xs font-medium uppercase tracking-wide;
+    line-height: 1.4;
+  }
+
+  /* Text colors */
+  .text-zen-primary { color: var(--zen-primary); }
+  .text-zen-secondary { color: var(--zen-text-secondary); }
+  .text-zen-muted { color: var(--zen-text-muted); }
+
+  /* Backgrounds */
+  .bg-zen { background-color: var(--zen-bg); }
+  .bg-zen-card { background-color: var(--zen-bg-card); }
+  .bg-zen-muted { background-color: var(--zen-bg-muted); }
+  .bg-zen-primary { background-color: var(--zen-primary); }
+  .bg-zen-primary-pale { background-color: var(--zen-primary-pale); }
+
+  /* Borders */
+  .border-zen { border-color: var(--zen-border); }
+  .border-zen-light { border-color: var(--zen-border-light); }
+  .border-zen-focus { border-color: var(--zen-border-focus); }
+
+  /* Shadows */
+  .shadow-zen-sm { box-shadow: var(--shadow-sm); }
+  .shadow-zen-md { box-shadow: var(--shadow-md); }
+  .shadow-zen-lg { box-shadow: var(--shadow-lg); }
+  .shadow-zen-xl { box-shadow: var(--shadow-xl); }
+  .shadow-zen-glow { box-shadow: var(--shadow-glow); }
+  .shadow-zen-card { box-shadow: var(--shadow-card); }
+}
+
+/* ---------- COMPONENT UTILITIES ---------- */
+@layer components {
+  /* ZenFlow Card */
+  .zen-card {
+    background-color: var(--zen-bg-card);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--zen-border-light);
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .zen-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  /* ZenFlow Buttons */
+  .zen-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    padding: 12px 24px;
+    transition: all var(--duration-normal) var(--ease-smooth);
+    cursor: pointer;
+    outline: none;
+    border: none;
+  }
+
+  .zen-btn-primary {
+    background-color: var(--zen-primary);
+    color: white;
+  }
+
+  .zen-btn-primary:hover {
+    background-color: var(--zen-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .zen-btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .zen-btn-secondary {
+    background-color: var(--zen-bg-muted);
+    color: var(--zen-text);
+    border: 1px solid var(--zen-border);
+  }
+
+  .zen-btn-secondary:hover {
+    background-color: var(--zen-primary-pale);
+    border-color: var(--zen-primary-light);
+  }
+
+  .zen-btn-ghost {
+    background-color: transparent;
+    color: var(--zen-text);
+  }
+
+  .zen-btn-ghost:hover {
+    background-color: var(--zen-bg-muted);
+  }
+
+  /* ZenFlow Input */
+  .zen-input {
+    width: 100%;
+    background-color: var(--zen-bg-card);
+    border: 1px solid var(--zen-border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 1rem;
+    transition: all var(--duration-fast) var(--ease-smooth);
+    outline: none;
+  }
+
+  .zen-input::placeholder {
+    color: var(--zen-text-muted);
+  }
+
+  .zen-input:focus {
+    border-color: var(--zen-primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  }
+
+  /* ZenFlow Badge */
+  .zen-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    background-color: var(--zen-primary-pale);
+    color: var(--zen-primary-dark);
+  }
+
+  /* Container */
+  .zen-container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  @media (min-width: 768px) {
+    .zen-container {
+      padding: 0 32px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .zen-container {
+      padding: 0 48px;
+    }
+  }
+
+  /* Section spacing */
+  .zen-section {
+    padding: 64px 0;
+  }
+
+  @media (min-width: 768px) {
+    .zen-section {
+      padding: 96px 0;
+    }
+  }
+
+  /* Glass effect */
+  .zen-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dark .zen-glass {
+    background: rgba(17, 25, 22, 0.8);
+    border: 1px solid rgba(52, 211, 153, 0.1);
+  }
+
+  /* Focus ring for accessibility */
+  .zen-focus-ring:focus-visible {
+    outline: 2px solid var(--zen-primary);
+    outline-offset: 2px;
+  }
+
+  /* Breathing animation for focus elements */
+  @keyframes zen-breathe {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+  }
+
+  .zen-breathe {
+    animation: zen-breathe 4s ease-in-out infinite;
+  }
+
+  /* Pulse animation for timers */
+  @keyframes zen-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
+    }
+  }
+
+  .zen-pulse {
+    animation: zen-pulse 2s ease-in-out infinite;
+  }
+
+  /* Gradient text */
+  .zen-gradient-text {
+    background: linear-gradient(135deg, var(--zen-primary) 0%, var(--zen-primary-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient background */
+  .zen-gradient-bg {
+    background: linear-gradient(135deg, var(--zen-bg) 0%, var(--zen-bg-muted) 100%);
+  }
+
+  /* Divider */
+  .zen-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--zen-border), transparent);
+  }
+}
+
+/* ========== LANDING PAGE ANIMATIONS ========== */
+/* Using CSS animations for better performance (GPU accelerated) */
+
+/* Floating animation for phone mockup */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Floating cards - staggered timing */
+@keyframes float-card {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(1deg);
+  }
+}
+
+.animate-float-card {
+  animation: float-card 5s ease-in-out infinite;
+}
+
+.animate-float-card-delayed {
+  animation: float-card 4.5s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+.animate-float-card-slow {
+  animation: float-card 6s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Background orb animations */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 10px) scale(0.95);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 15s ease-in-out infinite;
+}
+
+.animate-float-slower {
+  animation: float-slow 20s ease-in-out infinite;
+  animation-delay: -5s;
+}
+
+/* Slow spin for decorative elements */
+@keyframes spin-very-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-very-slow {
+  animation: spin-very-slow 40s linear infinite;
+}
+
+.animate-spin-reverse-slow {
+  animation: spin-very-slow 50s linear infinite reverse;
+}
+
+.animate-spin-slow {
+  animation: spin-very-slow 8s linear infinite;
+}
+
+/* Progress circle animation */
+@keyframes progress {
+  from {
+    stroke-dashoffset: 264;
+  }
+  to {
+    stroke-dashoffset: 66;
+  }
+}
+
+.animate-progress {
+  animation: progress 2s ease-out forwards;
+  animation-delay: 0.5s;
+}
+
+/* Perspective for 3D effects */
+.perspective-1000 {
+  perspective: 1000px;
 }
