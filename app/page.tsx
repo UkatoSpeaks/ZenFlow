@@ -33,8 +33,11 @@ export default function LandingPage() {
       <HeroSection />
       <ProblemSection />
       <FeaturesSection />
+      <HowItWorksSection />
       <DashboardSection />
+      <SocialProofSection />
       <PricingSection />
+      <FinalCTASection />
       <Footer />
     </div>
   );
@@ -732,6 +735,120 @@ function FeaturesSection() {
   );
 }
 
+/* ==================== HOW IT WORKS SECTION ==================== */
+function HowItWorksSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+
+  const steps = [
+    {
+      number: "01",
+      title: "Start a focus session",
+      description: "Choose your duration and hit start. That's it.",
+      icon: Play,
+      color: "from-zen-primary to-emerald-400",
+    },
+    {
+      number: "02",
+      title: "We block distractions",
+      description: "Automatically silence the noise so you can work.",
+      icon: Shield,
+      color: "from-blue-500 to-indigo-500",
+    },
+    {
+      number: "03",
+      title: "Track your progress",
+      description: "See your focus time grow day by day.",
+      icon: BarChart3,
+      color: "from-violet-500 to-purple-500",
+    },
+  ];
+
+  return (
+    <section
+      ref={sectionRef}
+      className="py-24 md:py-32 bg-white relative overflow-hidden"
+    >
+      {/* Subtle background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white" />
+
+      <div className="zen-container relative">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-2xl mx-auto mb-20"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-foreground text-sm font-semibold mb-6">
+            <Sparkles className="w-4 h-4 text-zen-primary" />
+            Simple as 1-2-3
+          </span>
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
+            How it works
+          </h2>
+        </motion.div>
+
+        {/* Steps */}
+        <div className="relative max-w-5xl mx-auto">
+          {/* Connecting line - desktop only */}
+          <div className="hidden md:block absolute top-24 left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-zen-primary via-blue-500 to-violet-500 opacity-20" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, y: 40 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{
+                  duration: 0.6,
+                  delay: index * 0.15,
+                }}
+                className="text-center"
+              >
+                {/* Step Number & Icon */}
+                <div className="relative inline-flex flex-col items-center mb-6">
+                  {/* Background circle */}
+                  <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center shadow-xl mb-4`}>
+                    <step.icon className="w-8 h-8 text-white" />
+                  </div>
+                  {/* Number badge */}
+                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center border border-gray-100">
+                    <span className="text-sm font-bold text-foreground">{step.number}</span>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <h3 className="text-xl font-bold text-foreground mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-zen-secondary">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="text-center mt-16"
+        >
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2 bg-foreground text-white font-semibold px-8 py-4 rounded-full hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl"
+          >
+            Get started for free
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 
 /* ==================== DASHBOARD SECTION ==================== */
 function DashboardSection() {
@@ -871,6 +988,163 @@ function DashboardSection() {
   );
 }
 
+/* ==================== SOCIAL PROOF SECTION ==================== */
+function SocialProofSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+
+  const testimonials = [
+    {
+      quote: "Helped me focus 3x better while coding. I finally finish my tasks without getting lost in YouTube.",
+      name: "Alex Chen",
+      role: "Software Developer",
+      avatar: "AC",
+      color: "from-blue-500 to-indigo-500",
+    },
+    {
+      quote: "My screen time dropped by 4 hours a day. ZenFlow gave me my evenings back.",
+      name: "Sarah Miller",
+      role: "UX Designer",
+      avatar: "SM",
+      color: "from-rose-500 to-pink-500",
+    },
+    {
+      quote: "The focus timer changed everything. I wrote my entire book draft in 3 months.",
+      name: "James Wilson",
+      role: "Writer & Creator",
+      avatar: "JW",
+      color: "from-violet-500 to-purple-500",
+    },
+  ];
+
+  const stats = [
+    { value: "50K+", label: "Focused minds" },
+    { value: "2M+", label: "Hours of deep work" },
+    { value: "4.9", label: "App Store rating" },
+  ];
+
+  return (
+    <section
+      ref={sectionRef}
+      className="py-24 md:py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden"
+    >
+      <div className="zen-container relative">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zen-primary/10 text-zen-primary text-sm font-semibold mb-6">
+            <Heart className="w-4 h-4" />
+            Loved by thousands
+          </span>
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight mb-4">
+            Real people,{" "}
+            <span className="bg-gradient-to-r from-zen-primary to-emerald-400 bg-clip-text text-transparent">
+              real results
+            </span>
+          </h2>
+          <p className="text-lg text-zen-secondary">
+            Join thousands who&apos;ve reclaimed their focus and transformed their digital habits.
+          </p>
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="grid grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto mb-16"
+        >
+          {stats.map((stat, index) => (
+            <div key={stat.label} className="text-center">
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={isInView ? { scale: 1, opacity: 1 } : {}}
+                transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-zen-primary to-emerald-400 bg-clip-text text-transparent mb-1"
+              >
+                {stat.value}
+              </motion.div>
+              <p className="text-sm md:text-base text-zen-secondary">{stat.label}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Testimonials */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {testimonials.map((testimonial, index) => (
+            <motion.div
+              key={testimonial.name}
+              initial={{ opacity: 0, y: 40 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{
+                duration: 0.6,
+                delay: 0.3 + index * 0.1,
+              }}
+              className="group"
+            >
+              <div className="h-full bg-white rounded-2xl p-6 border border-gray-100 shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.05] hover:-translate-y-1 transition-all duration-300">
+                {/* Stars */}
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+
+                {/* Quote */}
+                <p className="text-foreground mb-6 leading-relaxed">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </p>
+
+                {/* Author */}
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${testimonial.color} flex items-center justify-center text-white text-sm font-bold shadow-lg`}>
+                    {testimonial.avatar}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">
+                      {testimonial.name}
+                    </p>
+                    <p className="text-zen-muted text-sm">
+                      {testimonial.role}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Trust badges */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.6, delay: 0.7 }}
+          className="flex flex-wrap items-center justify-center gap-6 mt-16 text-zen-muted"
+        >
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            <span className="text-sm">Privacy-first</span>
+          </div>
+          <div className="w-1 h-1 rounded-full bg-gray-300" />
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5" />
+            <span className="text-sm">No ads, ever</span>
+          </div>
+          <div className="w-1 h-1 rounded-full bg-gray-300" />
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5" />
+            <span className="text-sm">Cancel anytime</span>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 /* ==================== PRICING SECTION ==================== */
 function PricingSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -991,6 +1265,83 @@ function PricingSection() {
             </motion.div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==================== FINAL CTA SECTION ==================== */
+function FinalCTASection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+
+  return (
+    <section
+      ref={sectionRef}
+      className="py-24 md:py-32 relative overflow-hidden"
+    >
+      {/* Mint gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#E8FFF3] via-[#D1FAE5] to-[#A7F3D0]" />
+      
+      {/* Decorative orbs */}
+      <div className="absolute -top-20 -left-20 w-80 h-80 bg-zen-primary/20 rounded-full blur-3xl animate-float-slow" />
+      <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-emerald-300/30 rounded-full blur-3xl animate-float-slower" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/30 rounded-full blur-3xl" />
+
+      <div className="zen-container relative">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-3xl mx-auto"
+        >
+          {/* Icon */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={isInView ? { scale: 1 } : {}}
+            transition={{ duration: 0.5, delay: 0.1, type: "spring" }}
+            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-xl shadow-zen-primary/20 mb-8"
+          >
+            <Leaf className="w-10 h-10 text-zen-primary" />
+          </motion.div>
+
+          {/* Headline */}
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground tracking-tight mb-6">
+            Ready to focus better?
+          </h2>
+          
+          <p className="text-lg md:text-xl text-zen-secondary mb-10 max-w-xl mx-auto">
+            Join 50,000+ people who&apos;ve transformed their relationship with technology.
+          </p>
+
+          {/* Big CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <Link
+              href="/signup"
+              className="group relative inline-flex items-center gap-3 bg-foreground text-white font-bold text-lg md:text-xl px-10 md:px-14 py-5 md:py-6 rounded-full shadow-2xl shadow-black/20 hover:shadow-3xl hover:scale-[1.02] transition-all duration-200"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-gray-900 to-gray-800 rounded-full" />
+              <span className="relative">Start Free Today</span>
+              <span className="relative inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 group-hover:bg-white/20 group-hover:translate-x-1 transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </span>
+            </Link>
+          </motion.div>
+
+          {/* Trust note */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="mt-6 text-sm text-zen-secondary"
+          >
+            Free forever • No credit card required • Setup in 2 minutes
+          </motion.p>
+        </motion.div>
       </div>
     </section>
   );
