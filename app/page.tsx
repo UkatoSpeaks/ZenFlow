@@ -1555,9 +1555,24 @@ function FinalCTASection() {
 /* ==================== FOOTER ==================== */
 function Footer() {
   const footerLinks = {
-    Product: ["Features", "How it Works", "Pricing", "FAQ"],
-    Resources: ["Blog", "Help Center", "Community", "API"],
-    Company: ["About", "Careers", "Privacy", "Terms"],
+    Product: [
+      { name: "Focus Timer", href: "/focus" },
+      { name: "Analytics", href: "/analytics" },
+      { name: "Site Blocker", href: "/blocker" },
+      { name: "Dashboard", href: "/dashboard" },
+    ],
+    Resources: [
+      { name: "Settings", href: "/settings" },
+      { name: "Help Center", href: "#" },
+      { name: "Community", href: "#" },
+      { name: "Blog", href: "#" },
+    ],
+    Company: [
+      { name: "About", href: "#" },
+      { name: "Careers", href: "#" },
+      { name: "Privacy", href: "/privacy" },
+      { name: "Terms", href: "/terms" },
+    ],
   };
 
   return (
@@ -1598,13 +1613,13 @@ function Footer() {
               <h4 className="font-semibold text-foreground mb-4">{category}</h4>
               <ul className="space-y-3">
                 {links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
                       className="text-zen-secondary hover:text-zen-primary transition-colors text-sm"
                     >
-                      {link}
-                    </a>
+                      {link.name}
+                    </Link>
                   </li>
                 ))}
               </ul>

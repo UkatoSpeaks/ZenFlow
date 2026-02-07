@@ -29,7 +29,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSettings, ZenFlowSettings } from "@/contexts/SettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Duration options
 const DURATION_OPTIONS = [
@@ -205,6 +207,9 @@ const Section = ({
 );
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { logout } = useAuth();
+  
   // Use settings context
   const { 
     settings, 
@@ -244,8 +249,9 @@ export default function SettingsPage() {
   }, [settings.desktopNotifications, requestNotificationPermission]);
 
   // Logout
-  const handleLogout = () => {
-    window.location.href = "/";
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
   };
 
   // Handle delete
@@ -600,14 +606,16 @@ export default function SettingsPage() {
             label="Privacy Policy"
             description="How we handle your data"
           >
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-1 px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-all text-sm"
-            >
-              View
-              <ExternalLink className="w-3.5 h-3.5" />
-            </motion.button>
+            <Link href="/privacy">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-all text-sm"
+              >
+                View
+                <ExternalLink className="w-3.5 h-3.5" />
+              </motion.button>
+            </Link>
           </SettingRow>
 
           {/* Danger Zone */}

@@ -28,9 +28,14 @@ import {
   Check,
   Plus,
   ExternalLink,
+  LogOut,
+  BarChart3,
+  Shield as ShieldIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+
 
 // Timer presets in minutes
 const PRESETS = [
@@ -64,6 +69,7 @@ const BLOCKED_SITES = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   
   // Timer state
   const [timerMinutes, setTimerMinutes] = useState(25);
@@ -393,10 +399,29 @@ export default function DashboardPage() {
                             <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
                           </button>
                         </Link>
+                        <div className="h-px bg-gray-100 my-1" />
+                        <Link href="/analytics" onClick={() => setShowSettings(false)}>
+                          <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-gray-700">
+                            <BarChart3 className="w-4 h-4 text-gray-400" />
+                            <span>Analytics</span>
+                          </button>
+                        </Link>
+                        <Link href="/blocker" onClick={() => setShowSettings(false)}>
+                          <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-gray-700">
+                            <Shield className="w-4 h-4 text-gray-400" />
+                            <span>Site Blocker</span>
+                          </button>
+                        </Link>
+                        <div className="h-px bg-gray-100 my-1" />
                         <button 
-                          onClick={() => { window.location.href = '/'; }}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-red-500"
+                          onClick={async () => { 
+                            setShowSettings(false);
+                            await logout(); 
+                            router.push('/'); 
+                          }}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition-colors text-red-500"
                         >
+                          <LogOut className="w-4 h-4" />
                           <span>Sign Out</span>
                         </button>
                       </div>
@@ -405,12 +430,21 @@ export default function DashboardPage() {
                 </AnimatePresence>
               </div>
 
-              <motion.div 
-                whileHover={{ scale: 1.05 }}
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-violet-500/30 cursor-pointer"
-              >
-                A
-              </motion.div>
+              {/* User Avatar */}
+              {user?.photoURL ? (
+                <img 
+                  src={user.photoURL} 
+                  alt={user.displayName || "Profile"} 
+                  className="w-10 h-10 rounded-xl shadow-lg cursor-pointer"
+                />
+              ) : (
+                <motion.div 
+                  whileHover={{ scale: 1.05 }}
+                  className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-violet-500/30 cursor-pointer"
+                >
+                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "A"}
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
@@ -425,7 +459,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              {getGreeting()}, Anurag
+              {getGreeting()}, {user?.displayName?.split(' ')[0] || 'there'}
             </h1>
             <motion.span 
               animate={{ rotate: [0, 14, -8, 14, -4, 10, 0] }}
