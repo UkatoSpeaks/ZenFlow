@@ -29,6 +29,7 @@ import {
 } from '@/lib/timer-persistence';
 import { recordDailyActivity } from '@/lib/streak-logic';
 import { invalidateAnalyticsCache } from '@/lib/analytics-cache';
+import { playSound, initAudio } from '@/lib/sounds';
 
 interface TimerContextType {
   // State
@@ -72,24 +73,15 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   // Refs
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Progress percentage
   const progress = state.totalDuration > 0 
     ? ((state.totalDuration - displayTime) / state.totalDuration) * 100 
     : 0;
 
-  // Initialize audio
+  // Initialize audio on user interaction
   useEffect(() => {
-    audioRef.current = new Audio('/sounds/notification.mp3');
-    audioRef.current.volume = 0.5;
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+    initAudio();
   }, []);
 
   // Restore timer state on mount
@@ -251,13 +243,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   // Handle timer completion
   const handleTimerComplete = useCallback(async () => {
     // Play notification sound
-    if (audioRef.current) {
-      try {
-        await audioRef.current.play();
-      } catch (error) {
-        console.error('Error playing sound:', error);
-      }
-    }
+    playSound(state.isBreak ? 'break' : 'notification', 0.7);
     
     // Show browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
