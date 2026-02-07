@@ -23,8 +23,15 @@ import {
   ScrollText,
   Timer,
   Battery,
+  LogOut,
+  User,
+  LayoutDashboard,
+  Settings,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+
 
 export default function LandingPage() {
   return (
@@ -47,6 +54,8 @@ export default function LandingPage() {
 function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const { user, logout, loading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -107,22 +116,121 @@ function Header() {
               ))}
             </div>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons / User Profile */}
             <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="hidden sm:block text-sm font-medium text-zen-secondary hover:text-foreground transition-colors px-4 py-2"
-              >
-                Sign In
-              </Link>
-              
-              <Link
-                href="/signup"
-                className="relative inline-flex items-center gap-2 bg-gradient-to-r from-zen-primary to-emerald-400 text-white text-sm font-semibold px-6 py-2.5 rounded-full shadow-lg shadow-zen-primary/25 hover:shadow-xl hover:shadow-zen-primary/30 hover:scale-[1.02] transition-all duration-200"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {loading ? (
+                <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+              ) : user ? (
+                /* Logged In State */
+                <div className="flex items-center gap-3">
+                  {/* Go to Dashboard Button */}
+                  <Link
+                    href="/dashboard"
+                    className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-zen-primary to-emerald-400 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg shadow-zen-primary/25 hover:shadow-xl hover:shadow-zen-primary/30 hover:scale-[1.02] transition-all duration-200"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+
+                  {/* Profile Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                      className="flex items-center gap-2 p-1.5 pr-3 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                      {user.photoURL ? (
+                        <img 
+                          src={user.photoURL} 
+                          alt={user.displayName || "Profile"} 
+                          className="w-9 h-9 rounded-full ring-2 ring-white shadow-md"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-zen-primary to-emerald-400 flex items-center justify-center ring-2 ring-white shadow-md">
+                          <span className="text-white text-sm font-semibold">
+                            {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+                          </span>
+                        </div>
+                      )}
+                      <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${profileDropdownOpen ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {profileDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden z-50"
+                        >
+                          {/* User Info */}
+                          <div className="px-4 py-4 border-b border-gray-100">
+                            <p className="font-semibold text-gray-900 truncate">
+                              {user.displayName || "User"}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate">
+                              {user.email}
+                            </p>
+                          </div>
+
+                          {/* Menu Items */}
+                          <div className="py-2">
+                            <Link
+                              href="/dashboard"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <LayoutDashboard className="w-5 h-5 text-gray-400" />
+                              <span className="font-medium">Dashboard</span>
+                            </Link>
+                            <Link
+                              href="/settings"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Settings className="w-5 h-5 text-gray-400" />
+                              <span className="font-medium">Settings</span>
+                            </Link>
+                          </div>
+
+                          {/* Logout */}
+                          <div className="border-t border-gray-100 py-2">
+                            <button
+                              onClick={async () => {
+                                setProfileDropdownOpen(false);
+                                await logout();
+                              }}
+                              className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <LogOut className="w-5 h-5" />
+                              <span className="font-medium">Log out</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              ) : (
+                /* Logged Out State */
+                <>
+                  <Link
+                    href="/login"
+                    className="hidden sm:block text-sm font-medium text-zen-secondary hover:text-foreground transition-colors px-4 py-2"
+                  >
+                    Sign In
+                  </Link>
+                  
+                  <Link
+                    href="/login"
+                    className="relative inline-flex items-center gap-2 bg-gradient-to-r from-zen-primary to-emerald-400 text-white text-sm font-semibold px-6 py-2.5 rounded-full shadow-lg shadow-zen-primary/25 hover:shadow-xl hover:shadow-zen-primary/30 hover:scale-[1.02] transition-all duration-200"
+                  >
+                    Get Started
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </>
+              )}
 
               {/* Mobile menu button */}
               <button
@@ -165,12 +273,76 @@ function Header() {
                     </a>
                   ))}
                   <div className="h-px bg-gray-200 my-2" />
-                  <Link
-                    href="/login"
-                    className="text-lg font-medium text-zen-secondary px-4 py-2"
-                  >
-                    Sign In
-                  </Link>
+                  
+                  {user ? (
+                    /* Logged In Mobile Menu */
+                    <>
+                      <div className="flex items-center gap-3 px-4 py-2">
+                        {user.photoURL ? (
+                          <img 
+                            src={user.photoURL} 
+                            alt={user.displayName || "Profile"} 
+                            className="w-10 h-10 rounded-full"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zen-primary to-emerald-400 flex items-center justify-center">
+                            <span className="text-white font-semibold">
+                              {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-gray-900">{user.displayName || "User"}</p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 text-lg font-medium text-foreground px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+                      >
+                        <LayoutDashboard className="w-5 h-5 text-gray-400" />
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/settings"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 text-lg font-medium text-foreground px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+                      >
+                        <Settings className="w-5 h-5 text-gray-400" />
+                        Settings
+                      </Link>
+                      <button
+                        onClick={async () => {
+                          setMobileMenuOpen(false);
+                          await logout();
+                        }}
+                        className="flex items-center gap-3 text-lg font-medium text-red-600 px-4 py-2 rounded-xl hover:bg-red-50 transition-colors w-full text-left"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        Log out
+                      </button>
+                    </>
+                  ) : (
+                    /* Logged Out Mobile Menu */
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-lg font-medium text-zen-secondary px-4 py-2"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-zen-primary to-emerald-400 text-white font-semibold px-6 py-3 rounded-full"
+                      >
+                        Get Started
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
