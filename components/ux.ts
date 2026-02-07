@@ -43,11 +43,3 @@ export {
   FullPageError,
 } from './ErrorState';
 
-// Theme / Dark mode
-export {
-  ThemeProvider,
-  useTheme,
-  ThemeToggle,
-  ThemeSelector,
-  ThemeDropdown,
-} from './ThemeProvider';
