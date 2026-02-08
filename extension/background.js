@@ -1,9 +1,9 @@
 // ZenFlow Extension Background Service Worker
-// Handles blocking logic and sync
+// Handles blocking logic and sync (Stateless Implementation)
 
 const APP_URL = 'http://localhost:3000';
 
-// Default blocked sites (can be synced from app)
+// Default blocked sites
 const DEFAULT_BLOCKED_SITES = [
   'youtube.com',
   'twitter.com',
@@ -15,154 +15,130 @@ const DEFAULT_BLOCKED_SITES = [
   'netflix.com',
 ];
 
-// State
-let focusState = {
-  isActive: false,
-  startedAt: null,
-  totalDuration: 25 * 60,
-  blockedSites: DEFAULT_BLOCKED_SITES,
-};
+// Helper to get current state from storage
+async function getExtensionState() {
+  const result = await chrome.storage.local.get(['focusState', 'blockedSites']);
+  return {
+    isActive: result.focusState?.isActive || false,
+    startedAt: result.focusState?.startedAt || null,
+    totalDuration: result.focusState?.totalDuration || 25 * 60,
+    blockedSites: result.blockedSites || DEFAULT_BLOCKED_SITES
+  };
+}
+
+// Helper to normalize domain from any URL string
+function normalizeDomain(input) {
+  if (!input) return '';
+  let domain = input.trim().toLowerCase();
+  domain = domain.replace(/^(https?:\/\/)/, ''); // Remove protocol
+  domain = domain.split('/')[0]; // Remove path
+  domain = domain.replace(/^www\./, ''); // Remove www.
+  return domain;
+}
+
+// Queue for blocking rule updates to prevent race conditions
+let isUpdating = false;
+
+// Update declarativeNetRequest rules
+async function updateBlockingRules() {
+  if (isUpdating) return;
+  isUpdating = true;
+
+  try {
+    const state = await getExtensionState();
+    
+    // Get existing rules to remove them
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const existingIds = existingRules.map(rule => rule.id);
+    
+    // Prepare new rules if active
+    let rulesToAdd = [];
+    if (state.isActive && state.blockedSites && state.blockedSites.length > 0) {
+      const uniqueSites = [...new Set(state.blockedSites.map(normalizeDomain).filter(Boolean))];
+      
+      rulesToAdd = uniqueSites.map((site, index) => ({
+        id: 1000 + index, // Use high ID range to avoid conflict
+        priority: 1,
+        action: {
+          type: 'redirect',
+          redirect: { extensionPath: `/blocked.html?site=${encodeURIComponent(site)}` }
+        },
+        condition: {
+          urlFilter: `||${site}^`, // Robust industry standard pattern
+          resourceTypes: ['main_frame', 'sub_frame']
+        }
+      }));
+    }
+
+    // Atomic update: remove all dynamic rules and add new ones
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existingIds,
+      addRules: rulesToAdd
+    });
+
+    console.log(`ZenFlow: ${rulesToAdd.length > 0 ? `Applied ${rulesToAdd.length} rules` : 'Cleared all rules'}`);
+  } catch (error) {
+    console.error('ZenFlow DNR Update Error:', error);
+  } finally {
+    // Small delay to allow Chrome to settle
+    setTimeout(() => { isUpdating = false; }, 100);
+  }
+}
 
 // Initialize extension
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('ZenFlow Focus Guard installed');
-  
-  // Set default blocked sites
-  await chrome.storage.local.set({ blockedSites: DEFAULT_BLOCKED_SITES });
-  
-  // Initialize empty rules
-  await updateBlockingRules([]);
+  const result = await chrome.storage.local.get(['blockedSites']);
+  if (!result.blockedSites) {
+    await chrome.storage.local.set({ blockedSites: DEFAULT_BLOCKED_SITES });
+  }
+  await updateBlockingRules();
 });
 
 // Handle messages from popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  switch (message.action) {
-    case 'startFocus':
-      startFocusMode();
-      break;
-    case 'stopFocus':
-      stopFocusMode();
-      break;
-    case 'getState':
-      sendResponse(focusState);
-      break;
-    case 'updateSites':
-      updateBlockedSites(message.sites);
-      break;
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.action === 'startFocus') {
+    await startFocusMode();
+  } else if (message.action === 'stopFocus') {
+    await stopFocusMode();
+  } else if (message.action === 'getState') {
+    const state = await getExtensionState();
+    sendResponse(state);
+  } else if (message.action === 'updateSites') {
+    await chrome.storage.local.set({ blockedSites: message.sites });
+    // updateBlockingRules will be triggered by onChanged
   }
   return true;
 });
 
-// Start focus mode - enable blocking
+// Start focus mode
 async function startFocusMode() {
-  focusState.isActive = true;
-  focusState.startedAt = Date.now();
+  const state = await getExtensionState();
+  await chrome.storage.local.set({ 
+    focusState: { ...state, isActive: true, startedAt: Date.now() } 
+  });
   
-  // Get blocked sites from storage
-  const result = await chrome.storage.local.get(['blockedSites']);
-  const sites = result.blockedSites || DEFAULT_BLOCKED_SITES;
-  
-  // Update blocking rules
-  await updateBlockingRules(sites);
-  
-  // Set alarm for session end
   chrome.alarms.create('focusEnd', {
-    delayInMinutes: focusState.totalDuration / 60
+    delayInMinutes: state.totalDuration / 60
   });
-  
-  console.log('Focus mode started, blocking:', sites);
 }
 
-// Stop focus mode - disable blocking
+// Stop focus mode
 async function stopFocusMode() {
-  focusState.isActive = false;
-  focusState.startedAt = null;
-  
-  // Remove all blocking rules
-  await updateBlockingRules([]);
-  
-  // Clear alarm
-  chrome.alarms.clear('focusEnd');
-  
-  console.log('Focus mode stopped');
-}
-
-// Update declarativeNetRequest rules
-async function updateBlockingRules(sites) {
-  // Remove existing rules
-  const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-  const existingIds = existingRules.map(rule => rule.id);
-  
-  if (existingIds.length > 0) {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: existingIds
-    });
-  }
-  
-  // If no sites or not active, just clear
-  if (!sites || sites.length === 0 || !focusState.isActive) {
-    return;
-  }
-  
-  // Create new redirect rules
-  const rules = sites.map((site, index) => ({
-    id: index + 1,
-    priority: 1,
-    action: {
-      type: 'redirect',
-      redirect: {
-        extensionPath: `/blocked.html?site=${encodeURIComponent(site)}`
-      }
-    },
-    condition: {
-      urlFilter: `*://*.${site}/*`,
-      resourceTypes: ['main_frame']
-    }
-  }));
-  
-  // Add rules for non-www versions too
-  const wwwRules = sites.map((site, index) => ({
-    id: sites.length + index + 1,
-    priority: 1,
-    action: {
-      type: 'redirect',
-      redirect: {
-        extensionPath: `/blocked.html?site=${encodeURIComponent(site)}`
-      }
-    },
-    condition: {
-      urlFilter: `*://${site}/*`,
-      resourceTypes: ['main_frame']
-    }
-  }));
-  
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    addRules: [...rules, ...wwwRules]
+  const state = await getExtensionState();
+  await chrome.storage.local.set({ 
+    focusState: { ...state, isActive: false, startedAt: null } 
   });
+  
+  chrome.alarms.clear('focusEnd');
 }
 
-// Update blocked sites
-async function updateBlockedSites(sites) {
-  await chrome.storage.local.set({ blockedSites: sites });
-  focusState.blockedSites = sites;
-  
-  if (focusState.isActive) {
-    await updateBlockingRules(sites);
-  }
-  
-  // Notify popup
-  chrome.runtime.sendMessage({ action: 'sitesUpdate', sites });
-}
-
-// Handle alarm (session end)
+// Handle session end
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'focusEnd') {
     await stopFocusMode();
-    
-    // Show notification
     chrome.notifications.create({
       type: 'basic',
-      // iconUrl: 'icons/icon128.png', // Commented out until icons are provided
       title: 'Focus Session Complete! 🎉',
       message: 'Great work! Time for a well-deserved break.',
       priority: 2
@@ -170,33 +146,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
-// Listen for storage changes (sync from web app)
-chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'local' && changes.blockedSites) {
-    focusState.blockedSites = changes.blockedSites.newValue;
-    
-    if (focusState.isActive) {
-      updateBlockingRules(changes.blockedSites.newValue);
-    }
-  }
-  
-  if (namespace === 'local' && changes.focusState) {
-    const newState = changes.focusState.newValue;
-    focusState = { ...focusState, ...newState };
-    
-    if (newState.isActive && !focusState.isActive) {
-      startFocusMode();
-    } else if (!newState.isActive && focusState.isActive) {
-      stopFocusMode();
-    }
-  }
-});
-
-// Keep service worker alive during focus session
-chrome.runtime.onStartup.addListener(async () => {
-  const result = await chrome.storage.local.get(['focusState']);
-  if (result.focusState?.isActive) {
-    focusState = result.focusState;
-    await startFocusMode();
+// React to storage changes (Sync point) - THE only place rules are updated
+chrome.storage.onChanged.addListener(async (changes, namespace) => {
+  if (namespace === 'local' && (changes.blockedSites || changes.focusState)) {
+    await updateBlockingRules();
   }
 });

@@ -3,93 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stay Focused | ZenFlow 🌿</title>
+    <title>Breathe and Focus | ZenFlow 🌿</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="blocked.css">
 </head>
 <body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
     <div class="container">
         <div class="card">
-            <div class="icon-header">
-                <span class="emoji">🧘</span>
+            <div class="logo-badge">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 5C11.7157 5 5 11.7157 5 20C5 28.2843 11.7157 35 20 35C28.2843 35 35 28.2843 35 20C35 11.7157 28.2843 5 20 5ZM20 10C25.5228 10 30 14.4772 30 20C30 23.3361 28.3644 26.2917 25.8647 28.1009L11.8991 14.1353C13.7083 11.6356 16.6639 10 20 10ZM10 20C10 16.6639 11.6356 13.7083 14.1353 11.8991L28.1009 25.8647C26.2917 28.3644 23.3361 30 20 30C14.4772 30 10 25.5228 10 20Z" fill="#10B981"/>
+                </svg>
             </div>
             
-            <h1 class="title">Stay focused, friend.</h1>
+            <h1 class="title">Breathe, you're doing great.</h1>
             <p class="subtitle">
-                <span id="siteName" class="site-badge">This site</span> is blocked during your focus session.
+                Access to <span id="siteName" class="site-tag">this site</span> is temporarily blocked to protect your deep work.
             </p>
 
-            <div class="timer-box">
-                <div class="timer-label">Time remaining in session</div>
-                <div id="timer" class="timer-value">--:--</div>
+            <div class="timer-container">
+                <div class="timer-visual">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                        <circle id="progressCircle" class="timer-progress" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                    <div id="timer" class="timer-text">--:--</div>
+                </div>
+                <div class="timer-label">Remaining in Session</div>
+            </div>
+
+            <div class="quote-box">
+                <p id="quoteText" class="quote">"Focus is a matter of deciding what things you're not going to do."</p>
+                <cite id="quoteAuthor" class="author">— Steve Jobs</cite>
             </div>
 
             <div class="actions">
-                <button id="goBack" class="btn btn-primary">Go back to work</button>
-                <button id="endSession" class="btn btn-secondary">End session early</button>
+                <button id="goBack" class="btn btn-primary">
+                    <span>Back to Flow</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m7 7-7-7 7-7"/></svg>
+                </button>
+                <button id="endSession" class="btn btn-ghost">I've finished my task early</button>
             </div>
-
-            <p class="quote">"Focus is a matter of deciding what things you're not going to do."</p>
         </div>
     </div>
 
-    <script>
-        // Get site name from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const site = urlParams.get('site');
-        if (site) {
-            document.getElementById('siteName').textContent = site;
-        }
-
-        // Back button
-        document.getElementById('goBack').onclick = () => {
-            window.history.back();
-            // If No back history, close tab
-            setTimeout(() => {
-                if (window.location.href.includes('blocked.html')) {
-                    window.close();
-                }
-            }, 100);
-        };
-
-        // End session button
-        document.getElementById('endSession').onclick = () => {
-            if (confirm('Are you sure you want to end your focus session early?')) {
-                chrome.runtime.sendMessage({ action: 'stopFocus' }, () => {
-                    // Refresh current page to original site
-                    if (site) {
-                        window.location.href = `https://${site}`;
-                    } else {
-                        window.close();
-                    }
-                });
-            }
-        };
-
-        // Update timer
-        function updateTimer() {
-            chrome.storage.local.get(['focusState'], (result) => {
-                if (result.focusState && result.focusState.isActive) {
-                    const state = result.focusState;
-                    const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
-                    const remaining = Math.max(0, state.totalDuration - elapsed);
-                    
-                    const mins = Math.floor(remaining / 60);
-                    const secs = remaining % 60;
-                    document.getElementById('timer').textContent = 
-                        `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                    
-                    if (remaining <= 0) {
-                        window.location.href = `https://${site}`;
-                    }
-                } else {
-                    // Not active anymore, redirect back
-                    if (site) window.location.href = `https://${site}`;
-                }
-            });
-        }
-
-        setInterval(updateTimer, 1000);
-        updateTimer();
-    </script>
+    <script src="blocked.js"></script>
 </body>
 </html>

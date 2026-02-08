@@ -246,6 +246,16 @@ export default function SiteBlockerPage() {
       sites: blockedSites.filter(s => s.enabled).map(s => s.domain),
     };
 
+    // Extension sync event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent("zenflow-sync", { 
+        detail: {
+          blockedSites: settings.sites,
+          // focusState is handled by TimerContext, but we can send an update here too
+        } 
+      }));
+    }
+
     window.dispatchEvent(new CustomEvent("zenflow-settings-update", { 
       detail: settings 
     }));

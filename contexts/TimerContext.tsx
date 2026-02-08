@@ -192,6 +192,20 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       
       saveToLocalStorage(stateToSave);
       
+      // Broadcast to extension
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zenflow-sync', {
+          detail: {
+            focusState: {
+              isActive: state.isRunning && !state.isPaused && !state.isBreak,
+              timeRemaining: displayTime,
+              totalDuration: state.totalDuration,
+              startedAt: state.startedAt,
+            }
+          }
+        }));
+      }
+      
       // Debounced Firestore sync
       if (user) {
         if (syncTimeoutRef.current) {
