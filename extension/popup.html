@@ -11,80 +11,127 @@
     <!-- Glass Header -->
     <header class="header">
       <div class="logo">
-        <svg class="logo-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L15 8L22 9L17 14L18.5 21L12 17L5.5 21L7 14L2 9L9 8L12 2Z" fill="#10B981" fill-opacity="0.2"/>
-          <path d="M12 3L14.5 9L21 10L16.2 14.5L17.5 21L12 18L6.5 21L7.8 14.5L3 10L9.5 9L12 3Z" stroke="#10B981" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M12 18V21" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
-        </svg>
+        <img src="icons/logo.svg" alt="ZenFlow Logo" width="24" height="24" class="logo-img">
         <span class="logo-text">ZenFlow</span>
       </div>
       <div class="header-actions">
+        <button class="icon-btn" id="goBack" title="Back" style="display: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
         <button class="icon-btn" id="openSettings" title="Settings">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         </button>
       </div>
     </header>
 
-    <main class="main-content">
-      <!-- Status Section -->
-      <section class="status-section">
-        <div class="status-header">
-          <div class="status-indicator">
-            <span class="pulse-dot" id="statusDot"></span>
-            <span class="status-text" id="statusLabel">Focus Mode: OFF</span>
+    <div class="view-wrapper" id="viewWrapper">
+      <main class="main-content" id="homeView">
+        <!-- Status Section -->
+        <section class="status-section">
+          <div class="status-header">
+            <div class="status-indicator">
+              <span class="pulse-dot" id="statusDot"></span>
+              <span class="status-text" id="statusLabel">Focus Mode: OFF</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="focusToggle">
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="focusToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
 
-        <!-- Dynamic Timer Area -->
-        <div class="timer-card" id="timerCard">
-          <div class="timer-circle">
-            <svg class="progress-ring" width="120" height="120">
-              <circle class="progress-ring-bg" stroke="#E5E7EB" stroke-width="6" fill="transparent" r="54" cx="60" cy="60"/>
-              <circle class="progress-ring-value" id="timerRing" stroke="#10B981" stroke-width="6" stroke-linecap="round" fill="transparent" r="54" cx="60" cy="60"/>
-            </svg>
-            <div class="timer-values">
-              <span id="timerText">25:00</span>
-              <span class="timer-mode" id="timerMode">Focus</span>
+          <!-- Dynamic Timer Area -->
+          <div class="timer-card" id="timerCard">
+            <div class="timer-circle">
+              <svg class="progress-ring" width="120" height="120">
+                <circle class="progress-ring-bg" stroke="#E5E7EB" stroke-width="6" fill="transparent" r="54" cx="60" cy="60"/>
+                <circle id="timerRing" class="progress-ring-value" stroke="#10B981" stroke-width="6" stroke-linecap="round" fill="transparent" r="54" cx="60" cy="60"/>
+              </svg>
+              <div class="timer-values">
+                <span id="timerText">25:00</span>
+                <span class="timer-mode" id="timerMode">Focus</span>
+              </div>
             </div>
           </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="action-grid">
+          <button class="action-btn primary" id="startBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>Start Session</span>
+          </button>
+          <button class="action-btn danger" id="stopBtn" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect></svg>
+            <span>End Session</span>
+          </button>
+        </div>
+
+        <!-- Quick Stats / Info -->
+        <div class="bottom-info">
+          <div class="info-card" id="blockedInfo">
+            <div class="info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div class="info-content">
+              <span class="info-title" id="blockedCount">Blocking 0 sites</span>
+              <span class="info-subtitle">Manage blocklist</span>
+            </div>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+
+          <button class="dashboard-btn" id="openDashboard">
+            <span>Go to Dashboard</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          </button>
+        </div>
+      </main>
+
+      <!-- Settings View -->
+      <section class="settings-view" id="settingsView">
+        <h2 class="view-title">Settings</h2>
+        
+        <div class="settings-group">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Session Duration</span>
+              <span class="setting-desc">Default focus time in minutes</span>
+            </div>
+            <select id="defaultDuration" class="setting-select">
+              <option value="15">15 min</option>
+              <option value="25" selected>25 min</option>
+              <option value="45">45 min</option>
+              <option value="60">60 min</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Notifications</span>
+              <span class="setting-desc">Alert when session completes</span>
+            </div>
+            <label class="switch small">
+              <input type="checkbox" id="enableNotifications" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Strict Mode</span>
+              <span class="setting-desc">Cannot end session early</span>
+            </div>
+            <label class="switch small">
+              <input type="checkbox" id="strictMode">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-footer">
+          <p class="settings-hint">Advanced settings are available in the web dashboard.</p>
         </div>
       </section>
-
-      <!-- Action Buttons -->
-      <div class="action-grid">
-        <button class="action-btn primary" id="startBtn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          <span>Start Session</span>
-        </button>
-        <button class="action-btn danger" id="stopBtn" style="display: none;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect></svg>
-          <span>End Session</span>
-        </button>
-      </div>
-
-      <!-- Quick Stats / Info -->
-      <div class="bottom-info">
-        <div class="info-card" id="blockedInfo">
-          <div class="info-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          </div>
-          <div class="info-content">
-            <span class="info-title" id="blockedCount">Blocking 0 sites</span>
-            <span class="info-subtitle">Manage blocklist</span>
-          </div>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-
-        <button class="dashboard-btn" id="openDashboard">
-          <span>Go to Dashboard</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-        </button>
-      </div>
-    </main>
+    </div>
 
     <footer class="footer">
       <div class="sync-indicator" id="syncStatus">

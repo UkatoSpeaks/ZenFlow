@@ -29,10 +29,52 @@ body {
   overflow: hidden;
 }
 
+/* Custom Scrollbar for views */
+.main-content::-webkit-scrollbar, 
+.settings-view::-webkit-scrollbar {
+  width: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb, 
+.settings-view::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover, 
+.settings-view::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .popup {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.view-wrapper {
+  display: flex;
+  width: 200%; /* Two views wide */
+  height: 100%;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.main-content, .settings-view {
+  width: 50%; /* Each view takes half the wrapper (one full popup width) */
+  flex-shrink: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+/* View states */
+.popup.show-settings .view-wrapper {
+  transform: translateX(-50%);
 }
 
 /* Header */
@@ -65,27 +107,122 @@ body {
   letter-spacing: -0.025em;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .icon-btn {
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 8px;
-  transition: all 0.2s;
+  padding: 6px;
+  border-radius: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--primary-dark);
+  transform: rotate(15deg);
+}
+
+#goBack:hover {
+  transform: translateX(-3px);
+}
+
+/* Main Content - already handled in view-wrapper above */
+
+/* Settings View specific */
+.view-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text-main);
 }
 
-/* Main Content */
-.main-content {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.setting-desc {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.setting-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  background: #F9FAFB;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  outline: none;
+}
+
+.setting-select:focus {
+  border-color: var(--primary);
+}
+
+/* Switches in settings */
+.switch.small {
+  width: 36px;
+  height: 20px;
+}
+
+.switch.small .slider:before {
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.switch.small input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+.settings-footer {
+  margin-top: auto;
+  padding-bottom: 10px;
+}
+
+.settings-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  text-align: center;
 }
 
 /* Status Section */
@@ -197,7 +334,14 @@ input:checked + .slider:before {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+@keyframes start-session {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1.02); }
+}
+
 .popup.focus-active .timer-card {
+  animation: start-session 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
   background: var(--primary-light);
   border-color: rgba(16, 185, 129, 0.2);
   transform: scale(1.02);

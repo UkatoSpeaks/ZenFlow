@@ -15,6 +15,11 @@ const blockedCount = document.getElementById('blockedCount');
 const blockedInfo = document.getElementById('blockedInfo');
 const openDashboard = document.getElementById('openDashboard');
 const syncStatus = document.getElementById('syncStatus');
+const openSettings = document.getElementById('openSettings');
+const goBack = document.getElementById('goBack');
+const defaultDuration = document.getElementById('defaultDuration');
+const enableNotifications = document.getElementById('enableNotifications');
+const strictMode = document.getElementById('strictMode');
 
 // Ring setup
 const RING_RADIUS = 54;
@@ -31,6 +36,11 @@ let state = {
   totalDuration: 25 * 60,
   blockedSites: [],
   startedAt: null,
+  settings: {
+    defaultDuration: 25,
+    notifications: true,
+    strict: false
+  }
 };
 
 // Initialize
@@ -48,20 +58,73 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Tick timer
   setInterval(tick, 1000);
+
+  // View Switching
+  openSettings.addEventListener('click', () => {
+    popupContainer.classList.add('show-settings');
+    openSettings.style.display = 'none';
+    goBack.style.display = 'block';
+  });
+
+  goBack.addEventListener('click', () => {
+    popupContainer.classList.remove('show-settings');
+    openSettings.style.display = 'block';
+    goBack.style.display = 'none';
+  });
+
+  // Settings Handlers
+  defaultDuration.addEventListener('change', async (e) => {
+    state.settings.defaultDuration = parseInt(e.target.value);
+    if (!state.isActive) {
+      state.totalDuration = state.settings.defaultDuration * 60;
+      state.timeRemaining = state.totalDuration;
+    }
+    await saveSettings();
+    updateUI();
+  });
+
+  enableNotifications.addEventListener('change', (e) => {
+    state.settings.notifications = e.target.checked;
+    saveSettings();
+  });
+
+  strictMode.addEventListener('change', (e) => {
+    state.settings.strict = e.target.checked;
+    saveSettings();
+  });
 });
 
 async function loadState() {
-  const result = await chrome.storage.local.get(['focusState', 'blockedSites']);
+  const result = await chrome.storage.local.get(['focusState', 'blockedSites', 'extensionSettings']);
+  
+  if (result.extensionSettings) {
+    state.settings = { ...state.settings, ...result.extensionSettings };
+  }
+
   if (result.focusState) {
     state = { ...state, ...result.focusState };
     if (state.isActive && state.startedAt) {
       const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
       state.timeRemaining = Math.max(0, state.totalDuration - elapsed);
     }
+  } else if (!state.isActive) {
+    // Initial load, set to default
+    state.totalDuration = state.settings.defaultDuration * 60;
+    state.timeRemaining = state.totalDuration;
   }
+
   if (result.blockedSites) {
     state.blockedSites = result.blockedSites;
   }
+  
+  // Update inputs to match state
+  defaultDuration.value = state.settings.defaultDuration;
+  enableNotifications.checked = state.settings.notifications;
+  strictMode.checked = state.settings.strict;
+}
+
+async function saveSettings() {
+  await chrome.storage.local.set({ extensionSettings: state.settings });
 }
 
 function updateUI() {
@@ -143,7 +206,7 @@ stopBtn.addEventListener('click', stopSession);
 async function startSession() {
   state.isActive = true;
   state.startedAt = Date.now();
-  state.totalDuration = 25 * 60;
+  state.totalDuration = state.settings.defaultDuration * 60;
   state.timeRemaining = state.totalDuration;
   
   await chrome.storage.local.set({ focusState: state });
@@ -152,9 +215,15 @@ async function startSession() {
 }
 
 async function stopSession() {
+  if (state.settings.strict && state.timeRemaining > 0) {
+    if (!confirm('Strict mode is ON. Are you sure you want to break your commitment?')) {
+      return;
+    }
+  }
+
   state.isActive = false;
   state.startedAt = null;
-  state.timeRemaining = 25 * 60;
+  state.timeRemaining = state.settings.defaultDuration * 60;
   
   await chrome.storage.local.set({ focusState: state });
   chrome.runtime.sendMessage({ action: 'stopFocus' });
