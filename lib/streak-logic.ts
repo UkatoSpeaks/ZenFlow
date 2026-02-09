@@ -94,7 +94,7 @@ export async function checkAndUpdateStreak(userId: string): Promise<StreakData> 
     lastCheckedDate: today,
   };
   
-  await updateDoc(userRef, updates);
+  await setDoc(userRef, updates, { merge: true });
   
   return updates;
 }
@@ -214,12 +214,12 @@ export async function recordDailyActivity(
   
   if (existing.exists()) {
     const data = existing.data();
-    await updateDoc(dailyStatsRef, {
+    await setDoc(dailyStatsRef, {
       totalMinutes: (data.totalMinutes || 0) + minutes,
       sessionsCount: (data.sessionsCount || 0) + 1,
       [`tags.${tag}`]: (data.tags?.[tag] || 0) + minutes,
       updatedAt: Date.now(),
-    });
+    }, { merge: true });
   } else {
     await setDoc(dailyStatsRef, {
       userId,
@@ -260,14 +260,14 @@ export async function recordDailyActivity(
       streakStartDate = today;
     }
     
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       lastActiveDate: today,
       currentStreak: newStreak,
       streakStartDate,
       longestStreak: Math.max(newStreak, userData.longestStreak || 0),
       totalFocusMinutes: (userData.totalFocusMinutes || 0) + minutes,
       totalSessions: (userData.totalSessions || 0) + 1,
-    });
+    }, { merge: true });
   }
 }
 

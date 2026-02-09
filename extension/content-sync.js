@@ -5,8 +5,10 @@ console.log('ZenFlow Sync Active 🌿');
 
 // Function to sync state to chrome storage
 function syncToExtension(data) {
-  if (data.blockedSites) {
-    chrome.storage.local.set({ blockedSites: data.blockedSites });
+  if (data.blockedSites && Array.isArray(data.blockedSites)) {
+    // Ensure we only store strings (domains)
+    const siteStrings = data.blockedSites.map(s => typeof s === 'string' ? s : (s.domain || '')).filter(Boolean);
+    chrome.storage.local.set({ blockedSites: siteStrings });
   }
   if (data.focusState) {
     chrome.storage.local.set({ focusState: data.focusState });
@@ -16,7 +18,6 @@ function syncToExtension(data) {
 // Listen for custom events from the web app
 window.addEventListener('zenflow-sync', (event) => {
   if (event.detail) {
-    console.log('Syncing from ZenFlow web app...', event.detail);
     syncToExtension(event.detail);
   }
 });
@@ -24,12 +25,16 @@ window.addEventListener('zenflow-sync', (event) => {
 // Initial check for localStorage fallback
 function checkInitialState() {
   try {
-    const sites = localStorage.getItem('zenflow_blocked_sites');
-    if (sites) {
-      chrome.storage.local.set({ blockedSites: JSON.parse(sites) });
+    const sitesRaw = localStorage.getItem('zenflow_blocked_sites');
+    if (sitesRaw) {
+      const parsed = JSON.parse(sitesRaw);
+      if (Array.isArray(parsed)) {
+        const siteStrings = parsed.map(s => typeof s === 'string' ? s : (s.domain || '')).filter(Boolean);
+        chrome.storage.local.set({ blockedSites: siteStrings });
+      }
     }
   } catch (e) {
-    // Ignore if not accessible
+    console.error('ZenFlow context sync failed:', e);
   }
 }
 

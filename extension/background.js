@@ -29,7 +29,13 @@ async function getExtensionState() {
 // Helper to normalize domain from any URL string
 function normalizeDomain(input) {
   if (!input) return '';
-  let domain = input.trim().toLowerCase();
+  
+  // Handle if input is an object from the web app
+  let domain = typeof input === 'string' ? input : (input.domain || '');
+  
+  if (!domain || typeof domain !== 'string') return '';
+  
+  domain = domain.trim().toLowerCase();
   domain = domain.replace(/^(https?:\/\/)/, ''); // Remove protocol
   domain = domain.split('/')[0]; // Remove path
   domain = domain.replace(/^www\./, ''); // Remove www.
@@ -47,30 +53,31 @@ async function updateBlockingRules() {
   try {
     const state = await getExtensionState();
     
-    // Get existing rules to remove them
+    // Get existing dynamic rules to remove them
     const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
     const existingIds = existingRules.map(rule => rule.id);
     
     // Prepare new rules if active
     let rulesToAdd = [];
     if (state.isActive && state.blockedSites && state.blockedSites.length > 0) {
+      // Filter out invalid entries and duplicates
       const uniqueSites = [...new Set(state.blockedSites.map(normalizeDomain).filter(Boolean))];
       
       rulesToAdd = uniqueSites.map((site, index) => ({
-        id: 1000 + index, // Use high ID range to avoid conflict
+        id: 2000 + index, // IDs starting from 2000 to avoid any conflict
         priority: 1,
         action: {
           type: 'redirect',
           redirect: { extensionPath: `/blocked.html?site=${encodeURIComponent(site)}` }
         },
         condition: {
-          urlFilter: `||${site}^`, // Robust industry standard pattern
+          urlFilter: `||${site}^`,
           resourceTypes: ['main_frame', 'sub_frame']
         }
       }));
     }
 
-    // Atomic update: remove all dynamic rules and add new ones
+    // Atomic update
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: existingIds,
       addRules: rulesToAdd
@@ -80,14 +87,13 @@ async function updateBlockingRules() {
   } catch (error) {
     console.error('ZenFlow DNR Update Error:', error);
   } finally {
-    // Small delay to allow Chrome to settle
-    setTimeout(() => { isUpdating = false; }, 100);
+    setTimeout(() => { isUpdating = false; }, 200);
   }
 }
 
 // Initialize extension
-chrome.runtime.onInstalled.addListener(async () => {
-  console.log('ZenFlow Focus Guard installed');
+chrome.runtime.onInstalled.addListener(async (details) => {
+  console.log('ZenFlow: Extension installed/updated - Mode:', details.reason);
   const result = await chrome.storage.local.get(['blockedSites']);
   if (!result.blockedSites) {
     await chrome.storage.local.set({ blockedSites: DEFAULT_BLOCKED_SITES });
@@ -95,20 +101,18 @@ chrome.runtime.onInstalled.addListener(async () => {
   await updateBlockingRules();
 });
 
-// Handle messages from popup
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+// Handle messages
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'startFocus') {
-    await startFocusMode();
+    startFocusMode().then(() => sendResponse({ success: true }));
+    return true;
   } else if (message.action === 'stopFocus') {
-    await stopFocusMode();
+    stopFocusMode().then(() => sendResponse({ success: true }));
+    return true;
   } else if (message.action === 'getState') {
-    const state = await getExtensionState();
-    sendResponse(state);
-  } else if (message.action === 'updateSites') {
-    await chrome.storage.local.set({ blockedSites: message.sites });
-    // updateBlockingRules will be triggered by onChanged
+    getExtensionState().then(state => sendResponse(state));
+    return true;
   }
-  return true;
 });
 
 // Start focus mode
@@ -133,22 +137,22 @@ async function stopFocusMode() {
   chrome.alarms.clear('focusEnd');
 }
 
-// Handle session end
+// Alarm logic
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'focusEnd') {
     await stopFocusMode();
     chrome.notifications.create({
       type: 'basic',
+      iconUrl: 'icons/icon128.png',
       title: 'Focus Session Complete! 🎉',
-      message: 'Great work! Time for a well-deserved break.',
-      priority: 2
+      message: 'Great work! Time for a well-deserved break.'
     });
   }
 });
 
-// React to storage changes (Sync point) - THE only place rules are updated
-chrome.storage.onChanged.addListener(async (changes, namespace) => {
+// Storage sync listener
+chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'local' && (changes.blockedSites || changes.focusState)) {
-    await updateBlockingRules();
+    updateBlockingRules().catch(console.error);
   }
 });
