@@ -15,6 +15,7 @@ const blockedCount = document.getElementById('blockedCount');
 const blockedInfo = document.getElementById('blockedInfo');
 const openDashboard = document.getElementById('openDashboard');
 const syncStatus = document.getElementById('syncStatus');
+const strictIndicator = document.getElementById('strictIndicator');
 const openSettings = document.getElementById('openSettings');
 const goBack = document.getElementById('goBack');
 const defaultDuration = document.getElementById('defaultDuration');
@@ -90,6 +91,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   strictMode.addEventListener('change', (e) => {
     state.settings.strict = e.target.checked;
+    
+    // Industrial "shutter" flash effect
+    if (state.settings.strict) {
+      popupContainer.style.filter = 'brightness(2) contrast(1.2)';
+      setTimeout(() => {
+        popupContainer.style.filter = '';
+        updateUI();
+      }, 50);
+    } else {
+      updateUI();
+    }
+    
     saveSettings();
   });
 });
@@ -132,10 +145,10 @@ function updateUI() {
   if (state.isActive) {
     popupContainer.classList.add('focus-active');
     statusDot.classList.add('active');
-    statusLabel.textContent = 'Focus Mode: ON';
+    statusLabel.textContent = state.settings.strict ? 'STRICT MODE: ON' : 'Focus Mode: ON';
     startBtn.style.display = 'none';
     stopBtn.style.display = 'flex';
-    timerMode.textContent = 'Focusing';
+    timerMode.textContent = state.settings.strict ? 'NO TURNING BACK' : 'Focusing';
   } else {
     popupContainer.classList.remove('focus-active');
     statusDot.classList.remove('active');
@@ -143,6 +156,15 @@ function updateUI() {
     startBtn.style.display = 'flex';
     stopBtn.style.display = 'none';
     timerMode.textContent = 'Ready';
+  }
+
+  // Serious Theme Toggle
+  if (state.settings.strict) {
+    popupContainer.classList.add('strict-mode-active');
+    strictIndicator.style.display = 'flex';
+  } else {
+    popupContainer.classList.remove('strict-mode-active');
+    strictIndicator.style.display = 'none';
   }
 
   // Toggle state
@@ -216,7 +238,7 @@ async function startSession() {
 
 async function stopSession() {
   if (state.settings.strict && state.timeRemaining > 0) {
-    if (!confirm('Strict mode is ON. Are you sure you want to break your commitment?')) {
+    if (!confirm('COMMITMENT DISRUPTION DETECTED. Strict mode is active. Are you absolutely certain you want to break your focus session? This cannot be undone.')) {
       return;
     }
   }
