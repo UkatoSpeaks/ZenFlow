@@ -15,21 +15,37 @@ service cloud.firestore {
     
     // Sessions collection - users can only access their own sessions
     match /sessions/{sessionId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     // Daily stats - for streaks and analytics
     match /dailyStats/{statId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Tasks collection
+    match /tasks/{taskId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Notifications collection
+    match /notifications/{notifId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Blocked Sites collection
+    match /blockedSites/{siteId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     // Daily focus data (legacy/extra)
     match /dailyFocus/{docId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
