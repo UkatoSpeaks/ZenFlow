@@ -69,8 +69,8 @@ export async function checkAndUpdateStreak(userId: string): Promise<StreakData> 
   if (userDoc.exists()) {
     const data = userDoc.data();
     streakData = {
-      currentStreak: data.currentStreak || 0,
-      longestStreak: data.longestStreak || 0,
+      currentStreak: data.stats?.currentStreak || 0,
+      longestStreak: data.stats?.longestStreak || 0,
       lastActiveDate: data.lastActiveDate || null,
       streakStartDate: data.streakStartDate || null,
       lastCheckedDate: data.lastCheckedDate || null,
@@ -87,16 +87,16 @@ export async function checkAndUpdateStreak(userId: string): Promise<StreakData> 
   
   // Update user document
   const updates = {
-    currentStreak: calculatedStreak.currentStreak,
-    longestStreak: Math.max(calculatedStreak.longestStreak, streakData.longestStreak),
+    "stats.currentStreak": calculatedStreak.currentStreak,
+    "stats.longestStreak": Math.max(calculatedStreak.longestStreak, streakData.longestStreak),
     lastActiveDate: calculatedStreak.lastActiveDate,
     streakStartDate: calculatedStreak.streakStartDate,
     lastCheckedDate: today,
   };
   
-  await setDoc(userRef, updates, { merge: true });
+  await updateDoc(userRef, updates);
   
-  return updates;
+  return calculatedStreak; // Return the full calculated streak data
 }
 
 // Calculate streak from activity history
@@ -242,7 +242,7 @@ export async function recordDailyActivity(
     const lastActiveDate = userData.lastActiveDate;
     const yesterday = getYesterdayDate();
     
-    let newStreak = userData.currentStreak || 0;
+    let newStreak = userData.stats?.currentStreak || 0;
     let streakStartDate = userData.streakStartDate || today;
     
     if (lastActiveDate === null) {
@@ -260,14 +260,14 @@ export async function recordDailyActivity(
       streakStartDate = today;
     }
     
-    await setDoc(userRef, {
+    await updateDoc(userRef, {
       lastActiveDate: today,
-      currentStreak: newStreak,
       streakStartDate,
-      longestStreak: Math.max(newStreak, userData.longestStreak || 0),
-      totalFocusMinutes: (userData.totalFocusMinutes || 0) + minutes,
-      totalSessions: (userData.totalSessions || 0) + 1,
-    }, { merge: true });
+      "stats.currentStreak": newStreak,
+      "stats.longestStreak": Math.max(newStreak, userData.stats?.longestStreak || 0),
+      "stats.totalFocusTime": (userData.stats?.totalFocusTime || 0) + minutes,
+      "stats.totalSessions": (userData.stats?.totalSessions || 0) + 1,
+    });
   }
 }
 

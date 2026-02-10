@@ -38,6 +38,10 @@ import {
   AreaChart,
 } from "recharts";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -60,45 +64,7 @@ interface DailyFocus {
   sessions: number;
 }
 
-// Generate sample data for demo
-const generateSampleData = () => {
-  const sessions: Session[] = [];
-  const dailyFocus: Record<string, DailyFocus> = {};
-  const tags = ["Coding", "Study", "Reading", "Deep Work", "Planning", "Writing"];
-  const now = new Date();
-
-  for (let i = 0; i < 90; i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
-    
-    const sessionsCount = Math.floor(Math.random() * 5);
-    let dayMinutes = 0;
-
-    for (let j = 0; j < sessionsCount; j++) {
-      const duration = [25, 50, 90, 30, 45][Math.floor(Math.random() * 5)];
-      dayMinutes += duration;
-      
-      sessions.push({
-        id: `${dateStr}-${j}`,
-        date: dateStr,
-        duration,
-        tag: tags[Math.floor(Math.random() * tags.length)],
-        timestamp: date.getTime() + j * 3600000,
-      });
-    }
-
-    if (sessionsCount > 0) {
-      dailyFocus[dateStr] = {
-        date: dateStr,
-        minutes: dayMinutes,
-        sessions: sessionsCount,
-      };
-    }
-  }
-
-  return { sessions, dailyFocus };
-};
+// Sample data generator removed for production
 
 const TIME_PERIODS = [
   { value: "today", label: "Today" },
@@ -380,41 +346,57 @@ const SessionItem = ({
 };
 
 export default function AnalyticsPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const { stats } = useSettings();
   const [period, setPeriod] = useState("week");
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [dailyFocus, setDailyFocus] = useState<Record<string, DailyFocus>>({});
 
   useEffect(() => {
-    const loadData = () => {
-      try {
-        const savedSessions = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-        const savedDaily = localStorage.getItem(STORAGE_KEYS.DAILY_FOCUS);
+    if (authLoading) return;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
 
-        if (savedSessions && savedDaily) {
-          setSessions(JSON.parse(savedSessions));
-          setDailyFocus(JSON.parse(savedDaily));
-        } else {
-          const sampleData = generateSampleData();
-          setSessions(sampleData.sessions);
-          setDailyFocus(sampleData.dailyFocus);
-          localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sampleData.sessions));
-          localStorage.setItem(STORAGE_KEYS.DAILY_FOCUS, JSON.stringify(sampleData.dailyFocus));
-        }
-      } catch (error) {
-        console.error("Error loading analytics data:", error);
-        const sampleData = generateSampleData();
-        setSessions(sampleData.sessions);
-        setDailyFocus(sampleData.dailyFocus);
-      } finally {
-        setIsLoading(false);
+    const sessionsQuery = query(
+      collection(db, "sessions"),
+      where("userId", "==", user.uid),
+      orderBy("startTime", "desc")
+    );
+
+    const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
+      const sessionList: Session[] = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const date = data.startTime.toDate ? data.startTime.toDate() : new Date(data.startTime);
+        return {
+          id: doc.id,
+          date: date.toISOString().split("T")[0],
+          duration: Math.floor(data.duration / 60), // convert seconds to minutes
+          tag: data.tag,
+          timestamp: date.getTime(),
+        };
+      });
+      setSessions(sessionList);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, authLoading, router]);
+
+  const dailyFocus = useMemo(() => {
+    const daily: Record<string, DailyFocus> = {};
+    sessions.forEach(s => {
+      if (!daily[s.date]) {
+        daily[s.date] = { date: s.date, minutes: 0, sessions: 0 };
       }
-    };
-
-    loadData();
-  }, []);
+      daily[s.date].minutes += s.duration;
+      daily[s.date].sessions += 1;
+    });
+    return daily;
+  }, [sessions]);
 
   const calculatedStats = useMemo(() => {
     const today = new Date();

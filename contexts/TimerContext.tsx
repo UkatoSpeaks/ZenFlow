@@ -89,6 +89,13 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     async function restoreState() {
       setIsLoading(true);
       
+      if (!user) {
+        setState(DEFAULT_TIMER_STATE);
+        setDisplayTime(DEFAULT_TIMER_STATE.timeRemaining);
+        setIsLoading(false);
+        return;
+      }
+      
       // First, try localStorage (faster)
       const localState = loadFromLocalStorage();
       

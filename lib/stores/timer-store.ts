@@ -14,20 +14,25 @@ interface TimerStore extends TimerState {
   tick: () => void;
   startBreak: (minutes: number) => void;
   finishSession: () => void;
+  clear: () => void;
   
   // Computed
   remaining: () => number;
   progress: () => number;
 }
 
+const initialState = {
+  status: "idle" as const,
+  duration: DEFAULT_TIMER_DURATION * 60,
+  elapsed: 0,
+  tag: "coding" as SessionTagId,
+};
+
 export const useTimerStore = create<TimerStore>()(
   persist(
     (set, get) => ({
       // Initial state
-      status: "idle",
-      duration: DEFAULT_TIMER_DURATION * 60,
-      elapsed: 0,
-      tag: "coding",
+      ...initialState,
 
       // Actions
       setDuration: (minutes) =>
@@ -79,6 +84,8 @@ export const useTimerStore = create<TimerStore>()(
           status: "idle",
           elapsed: 0,
         }),
+      
+      clear: () => set(initialState),
 
       // Computed values
       remaining: () => {

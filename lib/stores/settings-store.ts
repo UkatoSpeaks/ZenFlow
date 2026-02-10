@@ -10,6 +10,7 @@ interface SettingsStore extends UserSettings {
   setBreakDuration: (minutes: number) => void;
   toggleNotifications: () => void;
   resetSettings: () => void;
+  clear: () => void;
 }
 
 const defaultSettings: UserSettings = {
@@ -37,6 +38,7 @@ export const useSettingsStore = create<SettingsStore>()(
         set((state) => ({ notifications: !state.notifications })),
 
       resetSettings: () => set(defaultSettings),
+      clear: () => set(defaultSettings),
     }),
     {
       name: "zenflow-settings",

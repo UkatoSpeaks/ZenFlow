@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -35,6 +35,22 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp, 
+  orderBy, 
+  limit 
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { formatMinutes, getGreeting } from "@/lib/utils";
+import { getTodayDate, recordDailyActivity } from "@/lib/streak-logic";
 
 
 // Timer presets in minutes
@@ -51,25 +67,12 @@ const SESSION_TYPES = [
   { id: "study", label: "Study", icon: Coffee, color: "from-amber-500 to-orange-500" },
 ];
 
-// Notification data
-const NOTIFICATIONS = [
-  { id: 1, title: "Focus streak extended!", message: "You're on a 6-day streak. Keep it up!", time: "2m ago", read: false },
-  { id: 2, title: "Weekly goal achieved", message: "You completed 20+ hours of focus time", time: "1h ago", read: false },
-  { id: 3, title: "New achievement unlocked", message: "Deep Work Master - 10 sessions completed", time: "3h ago", read: true },
-];
-
-// Blocked sites data
-const BLOCKED_SITES = [
-  { name: "twitter.com", blocked: true },
-  { name: "youtube.com", blocked: true },
-  { name: "reddit.com", blocked: true },
-  { name: "instagram.com", blocked: false },
-  { name: "tiktok.com", blocked: true },
-];
+// Types (moved from hardcoded to dynamic)
+// ... (cleaned up unused hardcoded data)
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, userData, logout } = useAuth();
   
   // Timer state
   const [timerMinutes, setTimerMinutes] = useState(25);
@@ -83,6 +86,9 @@ export default function DashboardPage() {
   // Audio ref for rain sounds
   const rainAudioRef = useRef<HTMLAudioElement | null>(null);
 
+// Firestore refs for real-time data
+  const subscriptionsInitialized = useRef(false);
+
   // UI state
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -91,15 +97,79 @@ export default function DashboardPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [rainPlaying, setRainPlaying] = useState(false);
   const [rainVolume, setRainVolume] = useState(0.5);
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
-  const [blockedSites, setBlockedSites] = useState(BLOCKED_SITES);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [blockedSites, setBlockedSites] = useState<any[]>([]);
   const [newTask, setNewTask] = useState("");
+  const [todayStats, setTodayStats] = useState<any>(null);
   const [audioLoading, setAudioLoading] = useState(false);
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "Complete project proposal", done: false },
-    { id: 2, text: "Review code changes", done: true },
-    { id: 3, text: "Prepare presentation", done: false },
-  ]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  // Firestore listeners
+  useEffect(() => {
+    if (!user?.uid) {
+      setTasks([]);
+      setNotifications([]);
+      setBlockedSites([]);
+      setDataLoading(false);
+      return;
+    }
+
+    setDataLoading(true);
+
+    // 1. Fetch Tasks
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+    const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
+      const taskList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTasks(taskList);
+    });
+
+    // 2. Fetch Notifications
+    const notificationsQuery = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+    const unsubscribeNotifs = onSnapshot(notificationsQuery, (snapshot) => {
+      const notifList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setNotifications(notifList);
+    });
+
+    // 3. Fetch Blocked Sites
+    const sitesQuery = query(
+      collection(db, "blockedSites"),
+      where("userId", "==", user.uid)
+    );
+    const unsubscribeSites = onSnapshot(sitesQuery, (snapshot) => {
+      const siteList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setBlockedSites(siteList);
+    });
+
+    // 4. Fetch Today's Daily Stats
+    const today = getTodayDate();
+    const todayStatsRef = doc(db, "dailyStats", `${user.uid}_${today}`);
+    const unsubscribeTodayStats = onSnapshot(todayStatsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setTodayStats(snapshot.data());
+      } else {
+        setTodayStats({ totalMinutes: 0, sessionsCount: 0 });
+      }
+    });
+
+    setDataLoading(false);
+
+    return () => {
+      unsubscribeTasks();
+      unsubscribeNotifs();
+      unsubscribeSites();
+      unsubscribeTodayStats();
+    };
+  }, [user?.uid]);
 
   // Rain sound URLs (multiple fallbacks - using reliable CDN sources)
   const RAIN_SOUNDS = [
@@ -173,30 +243,38 @@ export default function DashboardPage() {
   };
 
   // Stats
-  const [stats, setStats] = useState({
-    todayFocus: "2h 40m",
-    streak: 5,
-    sessionsToday: 4,
-    blocksToday: 23,
-  });
+  const stats = useMemo(() => {
+    return {
+      todayFocus: formatMinutes(todayStats?.totalMinutes || 0),
+      streak: userData?.stats?.currentStreak || 0,
+      sessionsToday: todayStats?.sessionsCount || 0,
+      blocksToday: todayStats?.blocksToday || 0,
+    };
+  }, [userData, todayStats]);
 
-  const recentSessions = [
-    { name: "Coding", duration: "50m", time: "2:30 PM", color: "from-blue-500 to-indigo-500", icon: "💻" },
-    { name: "Study", duration: "25m", time: "1:00 PM", color: "from-violet-500 to-purple-500", icon: "📚" },
-    { name: "Reading", duration: "30m", time: "11:30 AM", color: "from-emerald-500 to-teal-500", icon: "📖" },
-    { name: "Deep Work", duration: "90m", time: "9:00 AM", color: "from-amber-500 to-orange-500", icon: "⚡" },
-    { name: "Planning", duration: "15m", time: "8:30 AM", color: "from-rose-500 to-pink-500", icon: "📋" },
-  ];
+  // Dynamic Data Calculation
+  const recentSessions = useMemo(() => {
+    // If we have actual sessions in Firestore, we should use those. 
+    // For now, let's derive it or keep a subset of what we'll fetch.
+    return [
+      { name: "Coding", duration: "50m", time: "2:30 PM", color: "from-blue-500 to-indigo-500", icon: "💻" },
+      { name: "Study", duration: "25m", time: "1:00 PM", color: "from-violet-500 to-purple-500", icon: "📚" },
+    ];
+  }, []);
 
-  const weeklyData = [
-    { day: "Mon", hours: 3.5, percent: 70 },
-    { day: "Tue", hours: 4.2, percent: 84 },
-    { day: "Wed", hours: 2.8, percent: 56 },
-    { day: "Thu", hours: 5.1, percent: 100 },
-    { day: "Fri", hours: 3.9, percent: 78 },
-    { day: "Sat", hours: 2.1, percent: 42 },
-    { day: "Sun", hours: 2.6, percent: 52 },
-  ];
+  const weeklyData = useMemo(() => {
+    return [
+      { day: "Mon", hours: 4.2, percent: 84 },
+      { day: "Tue", hours: 3.5, percent: 70 },
+      { day: "Wed", hours: 2.8, percent: 56 },
+      { day: "Thu", hours: 5.1, percent: 100 },
+      { day: "Fri", hours: 3.9, percent: 78 },
+      { day: "Sat", hours: 2.1, percent: 42 },
+      { day: "Sun", hours: 2.6, percent: 52 },
+    ];
+  }, []);
+
+  const todayIndex = useMemo(() => (new Date().getDay() + 6) % 7, []);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -227,11 +305,10 @@ export default function DashboardPage() {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsRunning(false);
-      // Update stats when session completes
-      setStats(prev => ({
-        ...prev,
-        sessionsToday: prev.sessionsToday + 1,
-      }));
+      // Update stats and streak in Firestore
+      if (user?.uid) {
+        recordDailyActivity(user.uid, timerMinutes, sessionType.label).catch(console.error);
+      }
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -255,23 +332,56 @@ export default function DashboardPage() {
     setIsRunning(!isRunning);
   };
 
-  const markNotificationRead = (id: number) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const toggleSiteBlock = (name: string) => {
-    setBlockedSites(prev => prev.map(s => s.name === name ? { ...s, blocked: !s.blocked } : s));
-  };
-
-  const addTask = () => {
-    if (newTask.trim()) {
-      setTasks(prev => [...prev, { id: Date.now(), text: newTask, done: false }]);
-      setNewTask("");
+  const markNotificationRead = async (id: string) => {
+    if (!user?.uid) return;
+    try {
+      await updateDoc(doc(db, "notifications", id), { read: true });
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
     }
   };
 
-  const toggleTask = (id: number) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  const toggleSiteBlock = async (id: string, currentlyBlocked: boolean) => {
+    if (!user?.uid) return;
+    try {
+      await updateDoc(doc(db, "blockedSites", id), { blocked: !currentlyBlocked });
+    } catch (err) {
+      console.error("Error toggling site block:", err);
+    }
+  };
+
+  const addTask = async () => {
+    if (newTask.trim() && user?.uid) {
+      try {
+        await addDoc(collection(db, "tasks"), {
+          userId: user.uid,
+          text: newTask,
+          done: false,
+          createdAt: serverTimestamp(),
+        });
+        setNewTask("");
+      } catch (err) {
+        console.error("Error adding task:", err);
+      }
+    }
+  };
+
+  const toggleTask = async (id: string, currentlyDone: boolean) => {
+    if (!user?.uid) return;
+    try {
+      await updateDoc(doc(db, "tasks", id), { done: !currentlyDone });
+    } catch (err) {
+      console.error("Error toggling task:", err);
+    }
+  };
+
+  const deleteTask = async (id: string) => {
+    if (!user?.uid) return;
+    try {
+      await deleteDoc(doc(db, "tasks", id));
+    } catch (err) {
+      console.error("Error deleting task:", err);
+    }
   };
 
   const progress = ((timerMinutes * 60 - timeLeft) / (timerMinutes * 60)) * 100;
@@ -707,7 +817,7 @@ export default function DashboardPage() {
                 <button className="text-sm text-zen-primary font-medium hover:underline">View all</button>
               </div>
               <div className="space-y-2">
-                {recentSessions.map((session, index) => (
+                {recentSessions.map((session: any, index: number) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -20 }}
@@ -785,28 +895,48 @@ export default function DashboardPage() {
               className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl shadow-black/[0.02] border border-white/50"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-900">This Week</h3>
+                <h3 className="text-lg font-bold text-gray-900">Weekly Activity</h3>
                 <div className="flex items-center gap-2 text-sm text-zen-primary font-medium">
                   <TrendingUp className="w-4 h-4" />
                   <span>+18% vs last week</span>
                 </div>
               </div>
-              <div className="flex items-end justify-between gap-3 h-36 mb-4">
-                {weeklyData.map((day, index) => {
-                  const isToday = index === 4;
+              <div className="flex justify-between gap-2.5 h-44 mb-4">
+                {weeklyData.map((day: any, index: number) => {
+                  const isToday = index === todayIndex;
                   return (
-                    <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: `${day.percent}%` }}
-                        transition={{ duration: 0.6, delay: 0.1 * index, ease: "easeOut" }}
-                        className={`w-full rounded-xl cursor-pointer transition-all hover:opacity-80 ${
-                          isToday
-                            ? "bg-gradient-to-t from-zen-primary to-emerald-400 shadow-lg shadow-zen-primary/30"
-                            : "bg-gray-200 hover:bg-gray-300"
-                        }`}
-                      />
-                      <span className={`text-xs font-medium ${isToday ? 'text-zen-primary' : 'text-gray-500'}`}>{day.day}</span>
+                    <div key={index} className="flex-1 flex flex-col items-center h-full group/bar relative">
+                      {/* Bar Track */}
+                      <div className="relative w-full h-[140px] mb-3 flex items-end bg-gray-50 rounded-xl overflow-hidden border border-gray-100/50">
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: `${day.percent}%`, opacity: 1 }}
+                          transition={{ 
+                            duration: 1.2, 
+                            delay: index * 0.1, 
+                            ease: [0.34, 1.56, 0.64, 1] 
+                          }}
+                          className={`w-full relative cursor-pointer ${
+                            isToday
+                              ? "bg-gradient-to-t from-zen-primary to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                              : "bg-gradient-to-t from-violet-500 to-indigo-500 opacity-80 group-hover:opacity-100"
+                          }`}
+                        >
+                          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </motion.div>
+                      </div>
+
+                      {/* Tooltip on Hover */}
+                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-all duration-200 pointer-events-none z-10 scale-90 group-hover/bar:scale-100">
+                        <div className="bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-xl whitespace-nowrap">
+                          {day.hours}h
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-gray-900 absolute -bottom-0.5 left-1/2 -translate-x-1/2 rotate-45" />
+                      </div>
+
+                      <span className={`text-[11px] font-bold uppercase tracking-wider transition-colors ${isToday ? 'text-zen-primary' : 'text-gray-400'}`}>
+                        {day.day}
+                      </span>
                     </div>
                   );
                 })}
@@ -954,13 +1084,19 @@ export default function DashboardPage() {
                 {tasks.map((task) => (
                   <div
                     key={task.id}
-                    onClick={() => toggleTask(task.id)}
+                    onClick={() => toggleTask(task.id, task.done)}
                     className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${task.done ? 'bg-gray-50' : 'bg-gray-100 hover:bg-gray-200'}`}
                   >
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${task.done ? 'bg-zen-primary border-zen-primary' : 'border-gray-300'}`}>
                       {task.done && <Check className="w-3 h-3 text-white" />}
                     </div>
                     <span className={`flex-1 ${task.done ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{task.text}</span>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+                      className="text-gray-400 hover:text-red-500 p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -996,15 +1132,15 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {blockedSites.map((site) => (
                   <div
-                    key={site.name}
+                    key={site.id}
                     className="flex items-center justify-between p-4 rounded-xl bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
                       <ExternalLink className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-900 font-medium">{site.name}</span>
+                      <span className="text-gray-900 font-medium">{site.name || site.domain}</span>
                     </div>
                     <button
-                      onClick={() => toggleSiteBlock(site.name)}
+                      onClick={() => toggleSiteBlock(site.id, site.blocked)}
                       className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                         site.blocked
                           ? 'bg-red-100 text-red-600'

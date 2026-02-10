@@ -18,29 +18,30 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
-  const { signInWithGoogle, signInWithEmail, error, clearError, loading: authLoading } = useAuth();
+  const { signInWithGoogle, signUpWithEmail, error, clearError, loading: authLoading } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   
   // Form state
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     setLoading(true);
     
     try {
-      await signInWithEmail(email, password);
+      await signUpWithEmail(email, password, name);
       setSuccess(true);
       setTimeout(() => {
         router.push("/dashboard");
-      }, 1000);
+      }, 1500);
     } catch {
       // Error is handled by the context
     } finally {
@@ -57,7 +58,7 @@ export default function LoginPage() {
       setSuccess(true);
       setTimeout(() => {
         router.push("/dashboard");
-      }, 1000);
+      }, 1500);
     } catch {
       // Error is handled by the context
     } finally {
@@ -123,9 +124,10 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+          {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
-            <p className="text-gray-500">Sign in to continue your focus journey</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Create your account</h1>
+            <p className="text-gray-500">Start your focus journey today</p>
           </div>
 
           {/* Success state */}
@@ -144,7 +146,7 @@ export default function LoginPage() {
                 >
                   <CheckCircle className="w-8 h-8 text-zen-primary" />
                 </motion.div>
-                <p className="text-lg font-semibold text-gray-900">Welcome back!</p>
+                <p className="text-lg font-semibold text-gray-900">Account created!</p>
                 <p className="text-gray-500 text-sm">Redirecting to dashboard...</p>
               </motion.div>
             )}
@@ -204,8 +206,19 @@ export default function LoginPage() {
               </div>
 
               {/* Email Form */}
-              <form onSubmit={handleEmailAuth} className="space-y-4">
-                {/* Email field */}
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-zen-primary/20 focus:border-zen-primary transition-all"
+                  />
+                </div>
+
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -218,7 +231,6 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* Password field */}
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -239,16 +251,6 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                {/* Forgot password */}
-                <div className="text-right">
-                  <Link 
-                    href="/forgot-password" 
-                    className="text-sm text-zen-primary hover:text-emerald-600 font-medium"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-
                 {/* Submit button */}
                 <motion.button
                   whileHover={{ scale: 1.01, y: -1 }}
@@ -261,21 +263,18 @@ export default function LoginPage() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Sign in
+                      Create account
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </motion.button>
               </form>
 
-              {/* Toggle to sign up */}
+              {/* Toggle to login */}
               <p className="text-center text-gray-500 mt-6">
-                Don't have an account?{" "}
-                <Link
-                  href="/signup"
-                  className="text-zen-primary font-semibold hover:text-emerald-600"
-                >
-                  Sign up
+                Already have an account?{" "}
+                <Link href="/login" className="text-zen-primary font-semibold hover:text-emerald-600">
+                  Sign in
                 </Link>
               </p>
             </>

@@ -12,17 +12,22 @@ import {
   updateProfile,
   UserCredential,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
+import { useTimerStore } from "@/lib/stores/timer-store";
+import { useSettingsStore } from "@/lib/stores/settings-store";
+import { checkAndUpdateStreak } from "@/lib/streak-logic";
 
 // User data stored in Firestore
-interface UserData {
+export interface UserData {
   uid: string;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
-  createdAt: Date;
-  lastLoginAt: Date;
+  createdAt: any;
+  lastLoginAt: any;
+  lastActiveDate: string | null;
+  streakStartDate: string | null;
   settings: {
     defaultDuration: number;
     breakDuration: number;
@@ -61,13 +66,15 @@ async function createOrUpdateUserDocument(user: User): Promise<void> {
   
   if (!userSnap.exists()) {
     // New user - create document
-    const newUserData: Omit<UserData, "createdAt" | "lastLoginAt"> & { createdAt: ReturnType<typeof serverTimestamp>, lastLoginAt: ReturnType<typeof serverTimestamp> } = {
+    const newUserData = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
       createdAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
+      lastActiveDate: null,
+      streakStartDate: null,
       settings: {
         defaultDuration: 25,
         breakDuration: 5,
@@ -106,27 +113,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const resetStores = () => {
+    // Access stores through their hooks' getState
+    useTimerStore.getState().clear();
+    useSettingsStore.getState().clear();
+    // Clear localStorage as well to be safe
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('zenflow-settings');
+      localStorage.removeItem('zenflow-timer');
+    }
+  };
+
   // Listen to auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        try {
-          const data = await fetchUserData(firebaseUser.uid);
-          setUserData(data);
-        } catch (err) {
-          console.error("Error fetching user data:", err);
-        }
-      } else {
-        setUserData(null);
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // If user is switching or logging out, clear stores BEFORE updating state
+      if (user && firebaseUser?.uid !== user.uid) {
+        resetStores();
       }
+
+      setUser(firebaseUser);
+      setLoading(firebaseUser ? true : false); // Only set loading if we need to fetch user data
       
+      if (!firebaseUser) {
+        setUserData(null);
+        resetStores();
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [user]);
+
+  // Real-time user data listener
+  useEffect(() => {
+    if (!user) return;
+
+    // Check and update streak immediately on login
+    checkAndUpdateStreak(user.uid).catch(console.error);
+
+    const userRef = doc(db, "users", user.uid);
+    const unsubscribeData = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setUserData(snapshot.data() as UserData);
+      }
+      setLoading(false);
+    }, (err) => {
+      console.error("Error listening to user data:", err);
+      setError("Failed to sync user data");
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => unsubscribeData();
+  }, [user]);
 
   // Sign in with Google
   const signInWithGoogle = async (): Promise<UserCredential> => {
@@ -187,7 +226,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await signOut(auth);
+      setUser(null);
       setUserData(null);
+      resetStores();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to sign out";
       setError(errorMessage);
@@ -232,7 +273,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Clear error
   const clearError = () => setError(null);
 
   const value: AuthContextType = {

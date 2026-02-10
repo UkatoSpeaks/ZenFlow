@@ -223,7 +223,7 @@ function Header() {
                   </Link>
                   
                   <Link
-                    href="/login"
+                    href="/signup"
                     className="relative inline-flex items-center gap-2 bg-gradient-to-r from-zen-primary to-emerald-400 text-white text-sm font-semibold px-6 py-2.5 rounded-full shadow-lg shadow-zen-primary/25 hover:shadow-xl hover:shadow-zen-primary/30 hover:scale-[1.02] transition-all duration-200"
                   >
                     Get Started
@@ -334,7 +334,7 @@ function Header() {
                         Sign In
                       </Link>
                       <Link
-                        href="/login"
+                        href="/signup"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center justify-center gap-2 bg-gradient-to-r from-zen-primary to-emerald-400 text-white font-semibold px-6 py-3 rounded-full"
                       >

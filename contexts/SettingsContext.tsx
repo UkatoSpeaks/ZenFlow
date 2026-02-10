@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { useAuth } from "./AuthContext";
 
 // Storage keys
 export const STORAGE_KEYS = {
@@ -125,6 +126,25 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [stats, setStats] = useState<ZenFlowStats>(DEFAULT_STATS);
   const [isLoading, setIsLoading] = useState(true);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+
+  const { user: authUser, loading: authLoading } = useAuth();
+
+  // Reset state when user changes or logs out
+  useEffect(() => {
+    if (!authLoading && !authUser) {
+      setSettings(DEFAULT_SETTINGS);
+      setUser(DEFAULT_USER);
+      setStats(DEFAULT_STATS);
+    }
+    
+    if (authUser) {
+      setUser({
+        name: authUser.displayName || DEFAULT_USER.name,
+        email: authUser.email || DEFAULT_USER.email,
+        avatar: authUser.photoURL || null,
+      });
+    }
+  }, [authUser, authLoading]);
 
   // Load all data on mount
   useEffect(() => {
